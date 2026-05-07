@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Respawn News — Noticias Gaming</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --cyan:   #00f5ff;
+      --magenta:#ff2d78;
+      --yellow: #f5e642;
+      --dark:   #05060f;
+      --dark2:  #0b0d1e;
+      --dark3:  #111428;
+      --glass:  rgba(0,245,255,0.04);
+      --border: rgba(0,245,255,0.15);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--dark);
+      color: #c8d8e8;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ── SCANLINES overlay ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.18) 2px,
+        rgba(0,0,0,0.18) 4px
+      );
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* ── NOISE grain ── */
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9998;
+      opacity: .4;
+    }
+
+    /* ══════════════════ NAV ══════════════════ */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(5,6,15,0.85);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 64px;
+    }
+
+    .nav-logo {
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 900;
+      font-size: 1.4rem;
+      letter-spacing: .1em;
+      color: var(--cyan);
+      text-decoration: none;
+      text-shadow: 0 0 18px var(--cyan), 0 0 40px rgba(0,245,255,.3);
+      position: relative;
+    }
+    .nav-logo span { color: var(--magenta); }
+
+    .nav-links {
+      display: flex; gap: 2rem; list-style: none;
+    }
+    .nav-links a {
+      font-family: 'Orbitron', sans-serif;
+      font-size: .7rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: #7a90a8;
+      text-decoration: none;
+      transition: color .2s;
+      position: relative;
+    }
+    .nav-links a::after {
+      content: '';
+      position: absolute; bottom: -4px; left: 0; right: 0;
+      height: 1px;
+      background: var(--cyan);
+      transform: scaleX(0);
+      transition: transform .25s;
+    }
+    .nav-links a:hover { color: var(--cyan); }
+    .nav-links a:hover::after { transform: scaleX(1); }
+    .nav-links a.active { color: var(--cyan); }
+    .nav-links a.active::after { transform: scaleX(1); }
+
+    .nav-search {
+      display: flex; align-items: center; gap: .5rem;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: .35rem .75rem;
+    }
+    .nav-search input {
+      background: none; border: none; outline: none;
+      color: #c8d8e8;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: .8rem;
+      width: 160px;
+    }
+    .nav-search input::placeholder { color: #3a5060; }
+    .nav-search svg { color: var(--cyan); flex-shrink: 0; }
+
+    /* ══════════════════ TICKER ══════════════════ */
+    .ticker-wrap {
+      background: var(--magenta);
+      overflow: hidden;
+      height: 30px;
+      display: flex; align-items: center;
+    }
+    .ticker-label {
+      font-family: 'Orbitron', sans-serif;
+      font-size: .6rem;
+      letter-spacing: .15em;
+      background: #0a0010;
+      color: var(--magenta);
+      padding: 0 1rem;
+      height: 100%;
+      display: flex; align-items: center;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+    .ticker-track {
+      display: flex;
+      animation: ticker 28s linear infinite;
+      gap: 3rem;
+      padding-left: 2rem;
+    }
+    .ticker-track span {
+      font-family: 'Rajdhani', sans-serif;
+      font-weight: 600;
+      font-size: .85rem;
+      color: #fff;
+      white-space: nowrap;
+    }
+    .ticker-track span::before { content: '▶ '; font-size: .6rem; opacity: .7; }
+    @keyframes ticker {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+
+    /* ══════════════════ MAIN LAYOUT ══════════════════ */
+    main { max-width: 1280px; margin: 0 auto; padding: 3rem 2rem 5rem; }
+
+    /* ── Section header ── */
+    .section-header {
+      display: flex; align-items: center; gap: 1rem;
+      margin-bottom: 1.8rem;
+    }
+    .section-header h2 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: .75rem;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: var(--cyan);
+    }
+    .section-header::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, var(--border) 0%, transparent 100%);
+    }
+    .section-header .tag {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: .65rem;
+      color: var(--magenta);
+      border: 1px solid var(--magenta);
+      padding: .1rem .5rem;
+      border-radius: 2px;
+    }
+
+    /* ══════════════════ FEATURED ══════════════════ */
+    .featured {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto;
+      gap: 1.5rem;
+      margin-bottom: 4rem;
+    }
+
+    .card {
+      position: relative;
+      background: var(--dark2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform .25s, border-color .25s, box-shadow .25s;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      border-color: var(--cyan);
+      box-shadow: 0 0 24px rgba(0,245,255,.12), 0 8px 32px rgba(0,0,0,.5);
+    }
+
+    /* Featured big card */
+    .card-big {
+      grid-row: 1 / 3;
+    }
+    .card-big .card-img { height: 320px; }
+
+    .card-img {
+      width: 100%; height: 200px;
+      object-fit: cover;
+      display: block;
+      filter: saturate(.8) brightness(.85);
+      transition: filter .3s, transform .4s;
+    }
+    .card:hover .card-img { filter: saturate(1) brightness(1); transform: scale(1.03); }
+
+    .card-img-wrap {
+      overflow: hidden;
+      position: relative;
+      flex-shrink: 0;
+    }
+    /* image placeholder gradient */
+    .card-img-placeholder {
+      width: 100%;
+      display: block;
+      flex-shrink: 0;
+    }
+    .card-big .card-img-placeholder { height: 320px; }
+    .card-img-placeholder { height: 200px; }
+
+    .card-body { padding: 1.2rem 1.4rem 1.4rem; flex: 1; display: flex; flex-direction: column; gap: .6rem; }
+
+    .badge {
+      display: inline-block;
+      font-family: 'Orbitron', sans-serif;
+      font-size: .55rem;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      padding: .2rem .6rem;
+      border-radius: 2px;
+      align-self: flex-start;
+    }
+    .badge-review  { background: rgba(245,230,66,.12); color: var(--yellow); border: 1px solid rgba(245,230,66,.3); }
+    .badge-news    { background: rgba(0,245,255,.1);   color: var(--cyan);   border: 1px solid rgba(0,245,255,.25); }
+    .badge-launch  { background: rgba(255,45,120,.12); color: var(--magenta);border: 1px solid rgba(255,45,120,.3); }
+    .badge-esports { background: rgba(140,80,255,.15); color: #b87fff;       border: 1px solid rgba(140,80,255,.3); }
+
+    .card h3 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      line-height: 1.35;
+      color: #e8f0f8;
+    }
+    .card-big h3 { font-size: 1.4rem; }
+
+    .card p {
+      font-size: .9rem;
+      color: #7a90a8;
+      line-height: 1.55;
+      flex: 1;
+    }
+
+    .card-meta {
+      display: flex; align-items: center; justify-content: space-between;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: .7rem;
+      color: #3a5060;
+    }
+    .card-meta .author { color: var(--cyan); opacity: .7; }
+
+    /* corner accent */
+    .card::before {
+      content: '';
+      position: absolute; top: 0; right: 0;
+      width: 0; height: 0;
+      border-style: solid;
+      border-width: 0 28px 28px 0;
+      border-color: transparent var(--dark3) transparent transparent;
+      z-index: 2;
+      transition: border-color .25s;
+    }
+    .card:hover::before { border-color: transparent var(--cyan) transparent transparent; }
+
+    /* score badge for reviews */
+    .score {
+      position: absolute; top: 12px; left: 12px; z-index: 3;
+      background: rgba(5,6,15,.8);
+      border: 2px solid var(--yellow);
+      border-radius: 4px;
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 900;
+      font-size: 1.1rem;
+      color: var(--yellow);
+      width: 42px; height: 42px;
+      display: flex; align-items: center; justify-content: center;
+      text-shadow: 0 0 10px var(--yellow);
+    }
+
+    /* ══════════════════ NEWS GRID ══════════════════ */
+    .news-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      margin-bottom: 4rem;
+    }
+
+    /* ══════════════════ LAUNCHES ══════════════════ */
+    .launches-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.2rem;
+    }
+
+    .launch-card {
+      background: var(--dark2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform .25s, border-color .25s, box-shadow .25s;
+      position: relative;
+    }
+    .launch-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--magenta);
+      box-shadow: 0 0 20px rgba(255,45,120,.1);
+    }
+    .launch-card-img {
+      height: 130px;
+      display: block;
+      width: 100%;
+    }
+    .launch-card-body { padding: .9rem 1rem 1rem; }
+    .launch-card h4 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: .75rem;
+      font-weight: 700;
+      color: #e0eaf5;
+      margin-bottom: .35rem;
+      line-height: 1.3;
+    }
+    .launch-date {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: .68rem;
+      color: var(--magenta);
+    }
+    .launch-platform {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: .8rem;
+      color: #4a6070;
+      margin-top: .2rem;
+    }
+
+    /* ══════════════════ PLACEHOLDER IMAGES (SVG gradients) ══════════════════ */
+    /* Each card gets a unique atmospheric gradient background */
+
+    /* ══════════════════ FOOTER ══════════════════ */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2rem;
+      text-align: center;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: .7rem;
+      color: #2a3a4a;
+    }
+    footer span { color: var(--cyan); }
+
+    /* ══════════════════ SCROLLBAR ══════════════════ */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--dark); }
+    ::-webkit-scrollbar-thumb { background: #1a2a3a; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--cyan); }
+
+    /* ══════════════════ ANIMATIONS ══════════════════ */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .featured, .news-grid, .launches-grid {
+      animation: fadeUp .6s ease both;
+    }
+    .news-grid { animation-delay: .15s; }
+    .launches-grid { animation-delay: .3s; }
+
+    /* ══════════════════ RESPONSIVE ══════════════════ */
+    @media (max-width: 900px) {
+      .featured { grid-template-columns: 1fr; }
+      .card-big { grid-row: auto; }
+      .card-big .card-img-placeholder { height: 240px; }
+      .news-grid { grid-template-columns: 1fr 1fr; }
+      .launches-grid { grid-template-columns: 1fr 1fr; }
+      .nav-search { display: none; }
+    }
+    @media (max-width: 560px) {
+      .nav-links { gap: 1rem; }
+      .nav-links li:nth-child(n+4) { display: none; }
+      .news-grid { grid-template-columns: 1fr; }
+      .launches-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════ NAV ═══════════════════════════════════ -->
+<nav>
+  <a href="#" class="nav-logo">NEXUS<span>.</span>GG</a>
+  <ul class="nav-links">
+    <li><a href="#" class="active">Inicio</a></li>
+    <li><a href="#noticias">Noticias</a></li>
+    <li><a href="#reviews">Reviews</a></li>
+    <li><a href="#lanzamientos">Lanzamientos</a></li>
+    <li><a href="#">Esports</a></li>
+  </ul>
+  <div class="nav-search">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    </svg>
+    <input type="text" placeholder="Buscar juegos, noticias…"/>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════ TICKER ═══════════════════════════════════ -->
+<div class="ticker-wrap">
+  <div class="ticker-label">BREAKING</div>
+  <div style="overflow:hidden; flex:1;">
+    <div class="ticker-track">
+      <span>GTA VI confirma fecha de lanzamiento para Q4 2025</span>
+      <span>Elden Ring supera 25 millones de copias vendidas</span>
+      <span>PlayStation 6 en desarrollo según filtración de Sony</span>
+      <span>Valve anuncia Steam Deck 2 con nueva GPU</span>
+      <span>Blizzard revela la expansión de Diablo IV para el verano</span>
+      <span>Nintendo Direct el próximo 15 de junio</span>
+      <!-- duplicate for seamless loop -->
+      <span>GTA VI confirma fecha de lanzamiento para Q4 2025</span>
+      <span>Elden Ring supera 25 millones de copias vendidas</span>
+      <span>PlayStation 6 en desarrollo según filtración de Sony</span>
+      <span>Valve anuncia Steam Deck 2 con nueva GPU</span>
+      <span>Blizzard revela la expansión de Diablo IV para el verano</span>
+      <span>Nintendo Direct el próximo 15 de junio</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ MAIN ═══════════════════════════════════ -->
+<main>
+
+  <!-- FEATURED -->
+  <div id="featured">
+    <div class="section-header">
+      <h2>Destacados</h2>
+      <span class="tag">HOT</span>
+    </div>
+    <div class="featured">
+
+      <!-- Big card -->
+      <a href="#" class="card card-big">
+        <div class="card-img-wrap">
+          <svg class="card-img-placeholder" viewBox="0 0 800 320" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#05060f"/>
+                <stop offset="50%" stop-color="#0d1535"/>
+                <stop offset="100%" stop-color="#1a0530"/>
+              </linearGradient>
+            </defs>
+            <rect width="800" height="320" fill="url(#g1)"/>
+            <circle cx="600" cy="160" r="180" fill="rgba(255,45,120,0.08)"/>
+            <circle cx="200" cy="100" r="120" fill="rgba(0,245,255,0.06)"/>
+            <text x="400" y="155" text-anchor="middle" font-family="monospace" font-size="64" fill="rgba(255,255,255,0.04)" font-weight="bold">GTA VI</text>
+            <text x="400" y="210" text-anchor="middle" font-family="monospace" font-size="18" fill="rgba(0,245,255,0.3)">— ANÁLISIS EXCLUSIVO —</text>
+          </svg>
+        </div>
+        <div class="card-body">
+          <span class="badge badge-news">Noticia</span>
+          <h3>GTA VI: Todo lo que sabemos sobre el juego más esperado de la década</h3>
+          <p>Rockstar Games mantiene el hermetismo, pero las filtraciones siguen llegando. Analizamos cada detalle confirmado sobre el título más ambicioso de la historia del videojuego.</p>
+          <div class="card-meta">
+            <span class="author">@redaccion</span>
+            <span>07 MAY 2026 · 8 min</span>
+          </div>
+        </div>
+      </a>
+
+      <!-- Small top card -->
+      <a href="#" class="card">
+        <div class="card-img-wrap" style="position:relative">
+          <svg class="card-img-placeholder" viewBox="0 0 600 200" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="g2" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#0b1a0f"/>
+                <stop offset="100%" stop-color="#051020"/>
+              </linearGradient>
+            </defs>
+            <rect width="600" height="200" fill="url(#g2)"/>
+            <circle cx="500" cy="50" r="100" fill="rgba(0,245,255,0.07)"/>
+            <text x="300" y="115" text-anchor="middle" font-family="monospace" font-size="42" fill="rgba(255,255,255,0.05)" font-weight="bold">ELDEN</text>
+          </svg>
+          <div class="score">9.8</div>
+        </div>
+        <div class="card-body">
+          <span class="badge badge-review">Review</span>
+          <h3>Elden Ring: Shadow of the Erdtree — La expansión perfecta</h3>
+          <p>FromSoftware vuelve a redefinir el género con una expansión colosal que podría ser el mejor DLC de la historia.</p>
+          <div class="card-meta">
+            <span class="author">@carlos_gamer</span>
+            <span>06 MAY 2026 · 12 min</span>
+          </div>
+        </div>
+      </a>
+
+      <!-- Small bottom card -->
+      <a href="#" class="card">
+        <div class="card-img-wrap">
+          <svg class="card-img-placeholder" viewBox="0 0 600 200" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="g3" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#150a02"/>
+                <stop offset="100%" stop-color="#0a0010"/>
+              </linearGradient>
+            </defs>
+            <rect width="600" height="200" fill="url(#g3)"/>
+            <circle cx="100" cy="150" r="80" fill="rgba(245,230,66,0.07)"/>
+            <text x="300" y="115" text-anchor="middle" font-family="monospace" font-size="42" fill="rgba(255,255,255,0.05)" font-weight="bold">STEAM</text>
+          </svg>
+        </div>
+        <div class="card-body">
+          <span class="badge badge-launch">Lanzamiento</span>
+          <h3>Valve anuncia Steam Deck 2: más potencia, mismo precio</h3>
+          <p>La nueva consola portátil de Valve llega con GPU RDNA 4 y pantalla OLED de 8 pulgadas a 90Hz.</p>
+          <div class="card-meta">
+            <span class="author">@tech_nexus</span>
+            <span>05 MAY 2026 · 5 min</span>
+          </div>
+        </div>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- NEWS GRID -->
+  <div id="noticias">
+    <div class="section-header">
+      <h2>Últimas Noticias</h2>
+      <span class="tag">LIVE</span>
+    </div>
+    <div class="news-grid">
+
+      <!-- Card 1 -->
+      <a href="#" class="card">
+        <div class="card-img-wrap">
+          <svg class="card-img-placeholder" viewBox="0 0 500 200" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="g4" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0a0520"/><stop offset="100%" stop-color="#200515"/></linearGradient></defs>
+            <rect width="500" height="200" fill="url(#g4)"/>
+            <circle cx="400" cy="100" r="90" fill="rgba(140,80,255,0.09)"/>
+            <text x="250" y="115" text-anchor="middle" font-family="monospace" font-size="36" fill="rgba(255,255,255,0.05)">BLIZZARD</text>
+          </svg>
+        </div>
+        <div class="card-body">
+          <span class="badge badge-news">Noticia</span>
+          <h3>Diablo IV: nueva expansión "Vessel of Hatred" llega en octubre</h3>
+          <p>Blizzard confirma la primera gran expansión narrativa del ARPG con un nuevo acto y clase de personaje.</p>
+          <div class="card-meta"><span class="author">@dark_loot</span><span>07 MAY · 4 min</span></div>
+        </div>
+      </a>
+
+      <!-- Card 2 -->
+      <a href="#" class="card">
+        <div class="card-img-wrap">
+          <svg class="card-img-placeholder" viewBox="0 0 500 200" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="g5" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#001520"/><stop offset="100%" stop-color="#050f1a"/></linearGradient></defs>
+            <rect width="500" height="200" fill="url(#g5)"/>
+            <circle cx="100" cy="80" r="70" fill="rgba(0,245,255,0.08)"/>
+            <text x="250" y="115" text-anchor="middle" font-family="monospace" font-size="36" fill="rgba(255,255,255,0.05)">NINTENDO</text>
+          </svg>
+        </div>
+        <div class="card-body">
+          <span class="badge badge-launch">Lanzamiento</span>
+          <h3>Nintendo Direct: Switch 2 muestra su lineup completo para 2026</h3>
+          <p>Mario Kart World, Metroid Prime 4 y una nueva IP sorpresa encabezan el catálogo de lanzamiento.</p>
+          <div class="card-meta"><span class="author">@ninten_fan</span><span>06 MAY · 6 min</span></div>
+        </div>
+      </a>
+
+      <!-- Card 3 -->
+      <a href="#" class="card">
+        <div class="card-img-wrap" style="position:relative">
+          <svg class="card-img-placeholder" viewBox="0 0 500 200" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="g6" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0f1500"/><stop offset="100%" stop-color="#051000"/></linearGradient></defs>
+            <rect width="500" height="200" fill="url(#g6)"/>
+            <circle cx="350" cy="130" r="80" fill="rgba(245,230,66,0.06)"/>
+            <text x="250" y="115" text-anchor="middle" font-family="monospace" font-size="32" fill="rgba(255,255,255,0.05)">CYBERPUNK</text>
+          </svg>
+          <div class="score" style="font-size:.9rem; width:38px; height:38px;">9.5</div>
+        </div>
+        <div class="card-body">
+          <span class="badge badge-review">Review</span>
+          <h3>Cyberpunk 2077: Phantom Liberty — ¿El mejor DLC del año?</h3>
+          <p>CDPR entrega una expansión cinematográfica que supera al juego base en todos los aspectos narrativos.</p>
+          <div class="card-meta"><span class="author">@night_city</span><span>05 MAY · 10 min</span></div>
+        </div>
+      </a>
+
+      <!-- Card 4 -->
+      <a href="#" class="card">
+        <div class="card-img-wrap">
+          <svg class="card-img-placeholder" viewBox="0 0 500 200" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="g7" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1a0005"/><stop offset="100%" stop-color="#050010"/></linearGradient></defs>
+            <rect width="500" height="200" fill="url(#g7)"/>
+            <circle cx="250" cy="100" r="100" fill="rgba(255,45,120,0.07)"/>
+            <text x="250" y="115" text-anchor="middle" font-family="monospace" font-size="32" fill="rgba(255,255,255,0.05)">SONY</text>
+          </svg>
+        </div>
+        <div class="card-body">
+          <span class="badge badge-news">Noticia</span>
+          <h3>PlayStation 6: Sony confirma desarrollo activo y promete "salto generacional"</h3>
+          <p>El presidente de PlayStation Studios habla por primera vez sobre las capacidades técnicas de la próxima consola.</p>
+          <div class="card-meta"><span class="author">@ps_insider</span><span>04 MAY · 3 min</span></div>
+        </div>
+      </a>
+
+      <!-- Card 5 -->
+      <a href="#" class="card">
+        <div class="card-img-wrap">
+          <svg class="card-img-placeholder" viewBox="0 0 500 200" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="g8" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#001a1a"/><stop offset="100%" stop-color="#000a15"/></linearGradient></defs>
+            <rect width="500" height="200" fill="url(#g8)"/>
+            <circle cx="420" cy="50" r="75" fill="rgba(0,245,255,0.07)"/>
+            <text x="250" y="115" text-anchor="middle" font-family="monospace" font-size="32" fill="rgba(255,255,255,0.05)">XBOX</text>
+          </svg>
+        </div>
+        <div class="card-body">
+          <span class="badge badge-news">Noticia</span>
+          <h3>Xbox Game Pass recibe 12 nuevos juegos en mayo incluyendo un AAA sorpresa</h3>
+          <p>Microsoft amplía su catálogo con títulos de Bethesda, Activision y un estudio independiente premiado.</p>
+          <div class="card-meta"><span class="author">@xbox_central</span><span>03 MAY · 4 min</span></div>
+        </div>
+      </a>
+
+      <!-- Card 6 -->
+      <a href="#" class="card">
+        <div class="card-img-wrap" style="position:relative">
+          <svg class="card-img-placeholder" viewBox="0 0 500 200" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="g9" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0a1500"/><stop offset="100%" stop-color="#001505"/></linearGradient></defs>
+            <rect width="500" height="200" fill="url(#g9)"/>
+            <circle cx="150" cy="150" r="65" fill="rgba(0,255,100,0.06)"/>
+            <text x="250" y="115" text-anchor="middle" font-family="monospace" font-size="28" fill="rgba(255,255,255,0.05)">BALDUR'S GATE</text>
+          </svg>
+          <div class="score" style="font-size:.9rem; width:38px; height:38px; border-color:#00ff80; color:#00ff80; text-shadow: 0 0 10px #00ff80;">10</div>
+        </div>
+        <div class="card-body">
+          <span class="badge badge-review">Review</span>
+          <h3>Baldur's Gate 3: Patch 7 añade el modo honor definitivo</h3>
+          <p>Larian sigue sorprendiendo con actualizaciones masivas gratuitas para su RPG galardonado con el GOTY.</p>
+          <div class="card-meta"><span class="author">@rpg_diaries</span><span>02 MAY · 7 min</span></div>
+        </div>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- UPCOMING LAUNCHES -->
+  <div id="lanzamientos">
+    <div class="section-header">
+      <h2>Próximos Lanzamientos</h2>
+      <span class="tag">UPCOMING</span>
+    </div>
+    <div class="launches-grid">
+
+      <div class="launch-card">
+        <svg class="launch-card-img" viewBox="0 0 400 130" xmlns="http://www.w3.org/2000/svg">
+          <defs><linearGradient id="l1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1a0010"/><stop offset="100%" stop-color="#050010"/></linearGradient></defs>
+          <rect width="400" height="130" fill="url(#l1)"/>
+          <circle cx="320" cy="65" r="70" fill="rgba(255,45,120,0.1)"/>
+          <text x="200" y="75" text-anchor="middle" font-family="monospace" font-size="22" fill="rgba(255,255,255,0.07)">GTA VI</text>
+        </svg>
+        <div class="launch-card-body">
+          <h4>Grand Theft Auto VI</h4>
+          <div class="launch-date">Q4 2025 · Retrasado</div>
+          <div class="launch-platform">PS5 / Xbox Series X</div>
+        </div>
+      </div>
+
+      <div class="launch-card">
+        <svg class="launch-card-img" viewBox="0 0 400 130" xmlns="http://www.w3.org/2000/svg">
+          <defs><linearGradient id="l2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#001520"/><stop offset="100%" stop-color="#000a20"/></linearGradient></defs>
+          <rect width="400" height="130" fill="url(#l2)"/>
+          <circle cx="80" cy="65" r="55" fill="rgba(0,245,255,0.09)"/>
+          <text x="200" y="75" text-anchor="middle" font-family="monospace" font-size="20" fill="rgba(255,255,255,0.07)">METROID</text>
+        </svg>
+        <div class="launch-card-body">
+          <h4>Metroid Prime 4: Beyond</h4>
+          <div class="launch-date">Junio 2026</div>
+          <div class="launch-platform">Nintendo Switch 2</div>
+        </div>
+      </div>
+
+      <div class="launch-card">
+        <svg class="launch-card-img" viewBox="0 0 400 130" xmlns="http://www.w3.org/2000/svg">
+          <defs><linearGradient id="l3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#150a00"/><stop offset="100%" stop-color="#100500"/></linearGradient></defs>
+          <rect width="400" height="130" fill="url(#l3)"/>
+          <circle cx="300" cy="40" r="60" fill="rgba(245,180,66,0.08)"/>
+          <text x="200" y="75" text-anchor="middle" font-family="monospace" font-size="18" fill="rgba(255,255,255,0.07)">ELDER SCROLLS</text>
+        </svg>
+        <div class="launch-card-body">
+          <h4>The Elder Scrolls VI</h4>
+          <div class="launch-date">TBA · En desarrollo</div>
+          <div class="launch-platform">PC / Xbox Series X</div>
+        </div>
+      </div>
+
+      <div class="launch-card">
+        <svg class="launch-card-img" viewBox="0 0 400 130" xmlns="http://www.w3.org/2000/svg">
+          <defs><linearGradient id="l4" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0a1500"/><stop offset="100%" stop-color="#050a00"/></linearGradient></defs>
+          <rect width="400" height="130" fill="url(#l4)"/>
+          <circle cx="200" cy="130" r="80" fill="rgba(100,255,80,0.07)"/>
+          <text x="200" y="75" text-anchor="middle" font-family="monospace" font-size="18" fill="rgba(255,255,255,0.07)">FABLE</text>
+        </svg>
+        <div class="launch-card-body">
+          <h4>Fable (Reboot)</h4>
+          <div class="launch-date">Agosto 2026</div>
+          <div class="launch-platform">PC / Xbox Series X</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</main>
+
+<!-- ═══════════════════════════════════ FOOTER ═══════════════════════════════════ -->
+<footer>
+  <p>© 2026 <span>NEXUS.GG</span> — Todos los derechos reservados · Hecho con ❤️ para gamers</p>
+</footer>
+
+</body>
+</html>
